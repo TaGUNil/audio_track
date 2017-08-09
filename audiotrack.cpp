@@ -1,6 +1,8 @@
 #include "audiotrack.h"
 
+#ifdef HAS_COSINE_TABLE
 #include "cosine.h"
+#endif
 
 AudioTrack::AudioTrack()
     : initialized_(false),
@@ -179,6 +181,7 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
                 level_offset /= fade_length_;
                 level_ = initial_level_ + static_cast<int32_t>(level_offset);
                 break;
+#ifdef HAS_COSINE_TABLE
             case Fade::CosineIn:
                 level_offset *= cosineFromZeroToHalfPi(fade_length_ - fade_progress_, fade_length_);
                 level_offset /= 32768;
@@ -195,6 +198,7 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
                 level_offset /= 65536;
                 level_ = initial_level_ + static_cast<int32_t>(level_offset);
                 break;
+#endif
             case Fade::None:
                 break;
             }

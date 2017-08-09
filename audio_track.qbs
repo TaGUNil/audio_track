@@ -11,7 +11,10 @@ Project {
 
         cpp.cxxLanguageVersion: "c++14"
 
-        cpp.defines: "_REENTRANT"
+        cpp.defines: [
+            "_REENTRANT",
+            "HAS_COSINE_TABLE"
+        ]
 
         cpp.dynamicLibraries: [
             "pulse-simple",

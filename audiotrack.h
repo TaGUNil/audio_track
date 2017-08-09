@@ -15,10 +15,12 @@ public:
         None,
         LinearIn,
         LinearOut,
+#ifdef HAS_COSINE_TABLE
         CosineIn,
         CosineOut,
         SCurveIn,
-        SCurveOut
+        SCurveOut,
+#endif
     };
 
     static const int32_t UNIT_LEVEL = 65536;
