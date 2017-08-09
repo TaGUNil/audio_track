@@ -1,0 +1,3 @@
+[submodule "wav_decoder"]
+	path = wav_decoder
+	url = https://github.com/TaGUNil/wav_decoder.git
