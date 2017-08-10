@@ -7,6 +7,7 @@
 AudioTrack::AudioTrack()
     : initialized_(false),
       channels_(0),
+      upmixing_(1),
       level_(UNIT_LEVEL),
       fade_mode_(Fade::None),
       fade_length_(0),
@@ -60,10 +61,14 @@ bool AudioTrack::start(void *file_context, Mode mode, int32_t level, AudioTrack:
     }
 
     if (reader_.channels() != channels_) {
-        if ((channels_ != 1) && (reader_.channels() != 1)) {
+        if (channels_ % reader_.channels() != 0) {
             reader_.close();
             return false;
         }
+
+        upmixing_ = channels_ / reader_.channels();
+    } else {
+        upmixing_ = 1;
     }
 
     level_ = 0;
@@ -131,34 +136,12 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
         return 0;
     }
 
-    int16_t input_frame[MAX_TRACK_CHANNELS];
+    frames = reader_.decodeToI16(buffer, frames, upmixing_);
 
     for (size_t frame_index = 0; frame_index < frames; frame_index++) {
-        if (reader_.decodeToI16(input_frame, 1) < 1) {
-            return frame_index;
-        }
-
-        if (channels_ == reader_.channels()) {
-            for (unsigned int channel = 0; channel < channels_; channel++) {
-                int32_t sample = (input_frame[channel] * level_) / UNIT_LEVEL;
-                buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
-            }
-        } else if (reader_.channels() == 1) {
-            int32_t sample = (input_frame[0] * level_) / UNIT_LEVEL;
-            for (unsigned int channel = 0; channel < channels_; channel++) {
-                buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
-            }
-        } else if (channels_ == 1) {
-            int32_t sample = 0;
-            for (unsigned int channel = 0; channel < reader_.channels(); channel++) {
-                sample += input_frame[channel];
-            }
-            sample /= static_cast<int32_t>(reader_.channels());
-            sample *= level_;
-            sample /= UNIT_LEVEL;
-            buffer[channels_ * frame_index] = static_cast<int16_t>(sample);
-        } else {
-            return 0;
+        for (unsigned int channel = 0; channel < channels_; channel++) {
+            int32_t sample = (buffer[channels_ * frame_index + channel] * level_) / UNIT_LEVEL;
+            buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
         }
 
         if (fade_mode_ != Fade::None) {

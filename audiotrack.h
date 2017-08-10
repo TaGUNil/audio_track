@@ -67,6 +67,7 @@ private:
     bool initialized_;
 
     unsigned int channels_;
+    unsigned int upmixing_;
 
     int32_t level_;
 
