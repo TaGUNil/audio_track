@@ -23,7 +23,8 @@ public:
 #endif
     };
 
-    static const int32_t UNIT_LEVEL = 65536;
+    static const uint8_t UNIT_LEVEL_SHIFT = 16;
+    static const int32_t UNIT_LEVEL = 1 << UNIT_LEVEL_SHIFT;
 
     static const unsigned int MAX_TRACK_CHANNELS = 2;
 
