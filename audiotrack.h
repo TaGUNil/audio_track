@@ -41,6 +41,8 @@ public:
 
     void stop(Fade fade_mode = Fade::None, uint32_t fade_length = 0);
 
+    void rewind();
+
     size_t play(int16_t *buffer, size_t frames);
 
     bool running()

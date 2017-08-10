@@ -126,6 +126,19 @@ void AudioTrack::stop(AudioTrack::Fade fade_mode, uint32_t fade_length)
     }
 }
 
+void AudioTrack::rewind()
+{
+    if (!initialized_) {
+        return;
+    }
+
+    if (!running_) {
+        return;
+    }
+
+    reader_.rewind();
+}
+
 size_t AudioTrack::play(int16_t *buffer, size_t frames)
 {
     if (!initialized_) {
