@@ -166,9 +166,11 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
     frames = reader_.decodeToI16(buffer, frames, upmixing_);
 
     for (size_t frame_index = 0; frame_index < frames; frame_index++) {
-        for (unsigned int channel = 0; channel < channels_; channel++) {
-            int32_t sample = (buffer[channels_ * frame_index + channel] * level_) / UNIT_LEVEL;
-            buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
+        if (level_ != UNIT_LEVEL) {
+            for (unsigned int channel = 0; channel < channels_; channel++) {
+                int32_t sample = (buffer[channels_ * frame_index + channel] * level_) / UNIT_LEVEL;
+                buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
+            }
         }
 
         if (fade_mode_ != Fade::None) {
@@ -183,28 +185,32 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
             fade_progress_++;
 
             int32_t level_offset = static_cast<int32_t>(final_level_) - static_cast<int32_t>(initial_level_);
-            uint16_t fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
+            uint16_t fade_progress_ms;
 
             switch (fade_mode_) {
             case Fade::LinearIn:
             case Fade::LinearOut:
+                fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
                 level_offset *= fade_progress_ms;
                 level_offset /= fade_length_ms_;
                 level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
 #ifdef HAS_COSINE_TABLE
             case Fade::CosineIn:
+                fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
                 level_offset *= cosineFromZeroToHalfPi(fade_length_ms_ - fade_progress_ms, fade_length_ms_);
                 level_offset /= 32768;
                 level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
             case Fade::CosineOut:
+                fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
                 level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_ms, fade_length_ms_);
                 level_offset /= 32768;
                 level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
             case Fade::SCurveIn:
             case Fade::SCurveOut:
+                fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
                 level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_ms * 2, fade_length_ms_);
                 level_offset /= 65536;
                 level_ = initial_level_ + static_cast<uint16_t>(level_offset);
