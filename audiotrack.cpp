@@ -1,5 +1,26 @@
 #include "audiotrack.h"
 
+#include <limits>
+
+#ifdef __ARM_ACLE
+#include <arm_acle.h>
+#endif
+
+static inline int16_t saturate(int32_t value)
+{
+#if defined(__ARM_ACLE) && defined(__ARM_FEATURE_SAT)
+    return static_cast<int16_t>(__ssat(value, 16));
+#else
+    if (value > std::numeric_limits<int16_t>::max()) {
+        value = std::numeric_limits<int16_t>::max();
+    } else if (value < std::numeric_limits<int16_t>::min()) {
+        value = std::numeric_limits<int16_t>::min();
+    }
+
+    return static_cast<int16_t>(value);
+#endif
+}
+
 #ifdef HAS_COSINE_TABLE
 #include "cosine.h"
 #endif
@@ -169,7 +190,7 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
         if (level_ != UNIT_LEVEL) {
             for (unsigned int channel = 0; channel < channels_; channel++) {
                 int32_t sample = (buffer[channels_ * frame_index + channel] * level_) / UNIT_LEVEL;
-                buffer[channels_ * frame_index + channel] = static_cast<int16_t>(sample);
+                buffer[channels_ * frame_index + channel] = saturate(sample);
             }
         }
 
