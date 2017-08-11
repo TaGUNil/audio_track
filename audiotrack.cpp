@@ -8,14 +8,16 @@ AudioTrack::AudioTrack()
     : initialized_(false),
       channels_(0),
       upmixing_(1),
+      frames_per_ms_(0),
       level_(UNIT_LEVEL),
       fade_mode_(Fade::None),
+      fade_length_ms_(0),
       fade_length_(0),
       fade_progress_(0),
       initial_level_(0),
       final_level_(0),
       reader_(nullptr, nullptr, nullptr),
-      file_context_(nullptr),
+      file_(nullptr),
       running_(false),
       stopping_(false)
 {
@@ -27,20 +29,23 @@ AudioTrack::AudioTrack(WavReader::TellCallback tell_callback,
                        unsigned int channels)
     : initialized_(true),
       channels_(channels),
+      upmixing_(1),
+      frames_per_ms_(0),
       level_(UNIT_LEVEL),
       fade_mode_(Fade::None),
+      fade_length_ms_(0),
       fade_length_(0),
       fade_progress_(0),
       initial_level_(0),
       final_level_(0),
       reader_(tell_callback, seek_callback, read_callback),
-      file_context_(nullptr),
+      file_(nullptr),
       running_(false),
       stopping_(false)
 {
 }
 
-bool AudioTrack::start(void *file_context, Mode mode, int32_t level, AudioTrack::Fade fade_mode, uint32_t fade_length)
+bool AudioTrack::start(void *file, Mode mode, uint16_t level, AudioTrack::Fade fade_mode, uint16_t fade_length_ms)
 {
     if (!initialized_) {
         return false;
@@ -49,11 +54,11 @@ bool AudioTrack::start(void *file_context, Mode mode, int32_t level, AudioTrack:
     running_ = false;
     stopping_ = false;
 
-    if (!reader_.open(file_context, mode)) {
+    if (!reader_.open(file, mode)) {
         return false;
     }
 
-    file_context_ = file_context;
+    file_ = file;
 
     if (reader_.channels() > MAX_TRACK_CHANNELS) {
         reader_.close();
@@ -71,16 +76,19 @@ bool AudioTrack::start(void *file_context, Mode mode, int32_t level, AudioTrack:
         upmixing_ = 1;
     }
 
+    // Not exactly precise, but good for overflow-free conversions
+    frames_per_ms_ = static_cast<uint16_t>(reader_.samplingRate() / 1000);
+
     level_ = 0;
 
     running_ = true;
 
-    fade(level, fade_mode, fade_length);
+    fade(level, fade_mode, fade_length_ms);
 
     return true;
 }
 
-void AudioTrack::fade(int32_t level, AudioTrack::Fade fade_mode, uint32_t fade_length)
+void AudioTrack::fade(uint16_t level, AudioTrack::Fade fade_mode, uint16_t fade_length_ms)
 {
     if (!initialized_) {
         return;
@@ -90,15 +98,21 @@ void AudioTrack::fade(int32_t level, AudioTrack::Fade fade_mode, uint32_t fade_l
         return;
     }
 
+    if (level > MAX_LEVEL) {
+        level = MAX_LEVEL;
+    }
+
     fade_mode_ = fade_mode;
 
     if (fade_mode_ != Fade::None) {
-        fade_length_ = fade_length;
+        fade_length_ms_ = fade_length_ms;
+        fade_length_ = fade_length_ms * frames_per_ms_;
         fade_progress_ = 0;
 
         initial_level_ = level_;
         final_level_ = level;
     } else {
+        fade_length_ms_ = 0;
         fade_length_ = 0;
         fade_progress_ = 0;
 
@@ -108,13 +122,13 @@ void AudioTrack::fade(int32_t level, AudioTrack::Fade fade_mode, uint32_t fade_l
     }
 }
 
-void AudioTrack::stop(AudioTrack::Fade fade_mode, uint32_t fade_length)
+void AudioTrack::stop(AudioTrack::Fade fade_mode, uint16_t fade_length_ms)
 {
     if (!initialized_) {
         return;
     }
 
-    fade(0, fade_mode, fade_length);
+    fade(0, fade_mode, fade_length_ms);
 
     if (fade_mode_ != Fade::None) {
         stopping_ = true;
@@ -168,31 +182,32 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
 
             fade_progress_++;
 
-            int64_t level_offset = final_level_ - initial_level_;
+            int32_t level_offset = static_cast<int32_t>(final_level_) - static_cast<int32_t>(initial_level_);
+            uint16_t fade_progress_ms = static_cast<uint16_t>(fade_progress_ / frames_per_ms_);
 
             switch (fade_mode_) {
             case Fade::LinearIn:
             case Fade::LinearOut:
-                level_offset *= fade_progress_;
-                level_offset /= fade_length_;
-                level_ = initial_level_ + static_cast<int32_t>(level_offset);
+                level_offset *= fade_progress_ms;
+                level_offset /= fade_length_ms_;
+                level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
 #ifdef HAS_COSINE_TABLE
             case Fade::CosineIn:
-                level_offset *= cosineFromZeroToHalfPi(fade_length_ - fade_progress_, fade_length_);
+                level_offset *= cosineFromZeroToHalfPi(fade_length_ms_ - fade_progress_ms, fade_length_ms_);
                 level_offset /= 32768;
-                level_ = initial_level_ + static_cast<int32_t>(level_offset);
+                level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
             case Fade::CosineOut:
-                level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_, fade_length_);
+                level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_ms, fade_length_ms_);
                 level_offset /= 32768;
-                level_ = initial_level_ + static_cast<int32_t>(level_offset);
+                level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
             case Fade::SCurveIn:
             case Fade::SCurveOut:
-                level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_ * 2, fade_length_);
+                level_offset *= 32768 - cosineFromZeroToHalfPi(fade_progress_ms * 2, fade_length_ms_);
                 level_offset /= 65536;
-                level_ = initial_level_ + static_cast<int32_t>(level_offset);
+                level_ = initial_level_ + static_cast<uint16_t>(level_offset);
                 break;
 #endif
             case Fade::None:

@@ -2,4 +2,4 @@
 
 #include <cstdint>
 
-int16_t cosineFromZeroToHalfPi(uint32_t numerator, uint32_t denominator);
+int16_t cosineFromZeroToHalfPi(uint16_t numerator, uint16_t denominator);

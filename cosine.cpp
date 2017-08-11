@@ -520,9 +520,9 @@ static int16_t cosine_table[POINTS + 1] = {
         0
 };
 
-int16_t cosineFromZeroToHalfPi(uint32_t numerator, uint32_t denominator)
+int16_t cosineFromZeroToHalfPi(uint16_t numerator, uint16_t denominator)
 {
-    size_t point = static_cast<size_t>((static_cast<uint64_t>(numerator) * POINTS / denominator) % (POINTS * 4));
+    size_t point = static_cast<size_t>((static_cast<uint32_t>(numerator) * POINTS / denominator) % (POINTS * 4));
 
     if (point <= POINTS) {
         return cosine_table[point];
