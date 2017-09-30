@@ -59,6 +59,11 @@ public:
         return running_ ? file_ : nullptr;
     }
 
+    Mode mode()
+    {
+        return reader_.mode();
+    }
+
     unsigned int channels()
     {
         return channels_;
