@@ -189,8 +189,9 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
     for (size_t frame_index = 0; frame_index < frames; frame_index++) {
         if (level_ != UNIT_LEVEL) {
             for (unsigned int channel = 0; channel < channels_; channel++) {
-                int32_t sample = (buffer[channels_ * frame_index + channel] * level_) / UNIT_LEVEL;
-                buffer[channels_ * frame_index + channel] = saturate(sample);
+                size_t offset = channels_ * frame_index + channel;
+                int32_t sample = (buffer[offset] * level_) / UNIT_LEVEL;
+                buffer[offset] = saturate(sample);
             }
         }
 
