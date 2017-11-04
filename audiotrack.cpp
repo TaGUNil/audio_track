@@ -193,6 +193,9 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
     }
 
     frames = reader_.decodeToI16(buffer, frames, upmixing_);
+    if (frames < 1) {
+        stop(Fade::None, 0);
+    }
 
     for (size_t frame_index = 0; frame_index < frames; frame_index++) {
         if (level_ != UNIT_LEVEL) {
