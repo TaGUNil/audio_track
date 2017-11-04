@@ -195,11 +195,10 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
     frames = reader_.decodeToI16(buffer, frames, upmixing_);
     if (frames < 1) {
         stop(Fade::None, 0);
+        return frames;
     }
 
-    size_t frame_index;
-
-    for (frame_index = 0; frame_index < frames; frame_index++) {
+    for (size_t frame_index = 0; frame_index < frames; frame_index++) {
         if (level_ != UNIT_LEVEL) {
             for (unsigned int channel = 0; channel < channels_; channel++) {
                 size_t offset = channels_ * frame_index + channel;
@@ -212,7 +211,7 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
             if (fade_progress_ == fade_length_) {
                 if (stopping_) {
                     stop(Fade::None, 0);
-                    break;
+                    return frame_index;
                 } else {
                     fade(final_level_, Fade::None, 0);
                 }
@@ -258,5 +257,5 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
         }
     }
 
-    return frame_index;
+    return frames;
 }
