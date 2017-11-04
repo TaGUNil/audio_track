@@ -197,7 +197,9 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
         stop(Fade::None, 0);
     }
 
-    for (size_t frame_index = 0; frame_index < frames; frame_index++) {
+    size_t frame_index;
+
+    for (frame_index = 0; frame_index < frames; frame_index++) {
         if (level_ != UNIT_LEVEL) {
             for (unsigned int channel = 0; channel < channels_; channel++) {
                 size_t offset = channels_ * frame_index + channel;
@@ -210,6 +212,7 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
             if (fade_progress_ == fade_length_) {
                 if (stopping_) {
                     stop(Fade::None, 0);
+                    break;
                 } else {
                     fade(final_level_, Fade::None, 0);
                 }
@@ -255,5 +258,5 @@ size_t AudioTrack::play(int16_t *buffer, size_t frames)
         }
     }
 
-    return frames;
+    return frame_index;
 }
