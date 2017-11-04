@@ -39,13 +39,21 @@ public:
                WavReader::ReadCallback read_callback,
                unsigned int channels);
 
-    bool start(void *file, Mode mode, uint16_t level, Fade fade_mode = Fade::None, uint16_t fade_length_ms = 0);
+    bool start(void *file,
+               Mode mode,
+               bool preload = true,
+               uint16_t level = UNIT_LEVEL,
+               Fade fade_mode = Fade::None,
+               uint16_t fade_length_ms = 0);
 
-    void fade(uint16_t level, Fade fade_mode = Fade::None, uint16_t fade_length_ms = 0);
+    void fade(uint16_t level,
+              Fade fade_mode = Fade::None,
+              uint16_t fade_length_ms = 0);
 
-    void stop(Fade fade_mode = Fade::None, uint16_t fade_length_ms = 0);
+    void stop(Fade fade_mode = Fade::None,
+              uint16_t fade_length_ms = 0);
 
-    void rewind();
+    void rewind(bool preload = true);
 
     size_t play(int16_t *buffer, size_t frames);
 

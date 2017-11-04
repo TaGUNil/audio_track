@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
     uint16_t level = static_cast<uint16_t>(atof(argv[2]) * AudioTrack::UNIT_LEVEL);
 
-    if (!track.start(wav_file, mode, level)) {
+    if (!track.start(wav_file, mode, true, level)) {
         fprintf(stderr, "Cannot play file\n");
         return 1;
     }
