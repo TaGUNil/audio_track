@@ -39,6 +39,11 @@ public:
                WavReader::ReadCallback read_callback,
                unsigned int channels);
 
+    void init(WavReader::TellCallback tell_callback,
+              WavReader::SeekCallback seek_callback,
+              WavReader::ReadCallback read_callback,
+              unsigned int channels);
+
     bool start(void *file,
                Mode mode,
                bool preload = true,
