@@ -73,6 +73,7 @@ void AudioTrack::init(WavReader::TellCallback tell_callback,
 {
     reader_.init(tell_callback, seek_callback, read_callback);
     channels_ = channels;
+    initialized_ = true;
 }
 
 bool AudioTrack::start(void *file,
