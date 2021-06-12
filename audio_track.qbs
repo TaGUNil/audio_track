@@ -13,6 +13,7 @@ Project {
 
         cpp.defines: [
             "_REENTRANT",
+            "HAS_IEEE_FLOAT",
             "HAS_COSINE_TABLE"
         ]
 
